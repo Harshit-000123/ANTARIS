@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ANTARIS — an offline-first operations dashboard concept for Antarctic research stations.">
+    <title>ANTARIS — Polar Station Operations</title>
+    <!-- Add basic fallback styling so the elements are visible -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">ANTARIS</div><div class="brand-sub">POLAR STATION OPERATIONS</div>
+    <div id="sidebar"></div>
+    <div class="side-foot">ANTARIS Operations Platform<br>Offline-first · Polar Operations<div class="sim-tag"><span class="sd"></span>SIMULATION MODE</div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar"><div class="station-wrap"><label>ACTIVE STATION</label><select id="station-select"></select></div><div id="topbar-right"></div></header>
+    <div id="mobile-nav" class="mobile-nav"></div>
+    <section class="content">
+      <div id="toast" class="toast"></div>
+      <div id="v-command" class="view active">
+        <div class="hero"><div><div class="eyebrow">MISSION CONTROL / LIVE OPERATIONS</div><div class="title">Antarctic Research Command</div><div class="sub">Offline-first telemetry, resource intelligence and emergency readiness</div></div></div>
+        <div class="card identity" id="station-identity"></div><div class="ncpor-source-line">NCPOR DATA LAYER · METEOROLOGICAL OBSERVATIONS · STATION: <span id="ncpor-command-station">—</span></div>
+        <div class="scenario-row" id="scenario-row"></div>
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="card chart-card"><div class="chart-head"><span>LIVE TELEMETRY TREND</span><span class="chart-legend"><i class="legend-dot chill"></i> WIND-CHILL <i class="legend-dot fuel"></i> FUEL BURN</span></div><div class="chart-meta"><span id="chart-window">LAST 80 SEC</span><span id="chart-status">LIVE</span></div><svg id="telemetry-chart" width="900" height="220" viewBox="0 0 900 220" preserveAspectRatio="none"></svg></div>
+        <div class="card"><div class="alarm-head"><b>ALARM PREVIEW</b><span id="alarm-preview-count">0 active</span></div><div id="alarm-preview"></div></div>
+      </div>
+      <div id="v-telemetry" class="view"><div class="hero"><div><div class="eyebrow">TELEMETRY</div><div class="title">Live Sensor Feed</div></div></div><div class="kpi-grid" id="kpi-grid-2"></div><div class="card satcom-card"><div class="panel-title-row"><h3>SATCOM LINK HEALTH</h3><span id="satcom-state-pill" class="satcom-pill nominal">NOMINAL</span></div><div id="satcom-detail"></div></div>
+<div class="card ncpor-card">
+  <div class="panel-title-row"><h3>NCPOR METEOROLOGICAL FEED</h3><span id="ncpor-source-pill" class="ncpor-pill">NCPOR SOURCE</span></div>
+  <div id="ncpor-detail"></div>
+  <div class="ncpor-foot"><span id="ncpor-updated">SOURCE: data.ncpor.res.in</span><button class="ncpor-refresh" onclick="refreshNcpOr()">REFRESH SOURCE</button></div>
+</div><div class="card"><h3>Packet Feed</h3><div id="packet-feed"></div></div></div>
+      <div id="v-sync" class="view"><div class="hero"><div><div class="eyebrow">OFFLINE-FIRST DATA</div><div class="title">Offline Synchronization</div></div></div><div class="grid2"><div class="card"><div id="pipeline"></div></div><div class="card"><h3>Sync Metrics</h3><div class="metric-row"><span>Raw payload</span><b id="m-raw"></b></div><div class="metric-row"><span>Compressed</span><b id="m-comp"></b></div><div class="metric-row"><span>Bandwidth saved</span><b id="m-saved"></b></div><div class="metric-row"><span>Link</span><b id="m-link"></b></div><div class="metric-row"><span>Last sync</span><b id="m-lastsync"></b></div><div class="metric-row"><span>Retries</span><b id="m-retry"></b></div><button id="sync-btn" onclick="toggleConnectivity()">Sync</button><div id="conflict-success" class="deficit-ok" style="display:none"></div><button onclick="resolveConflict('merge')">Resolve Conflict</button></div></div></div>
+      <div id="v-resource" class="view">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">STEP 6 · OPERATIONS TIMELINE</div>
+      <div class="title">Expedition Operations Control</div>
+      <div class="sub">Weather · logistics · station resources · crew · emergency events</div>
+    </div>
+    <div class="map-live-pill"><span></span> NETWORK + EVENT STREAM ONLINE</div>
+  </div>
+
+  <div class="ops-kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">OPERATIONAL STATE</div><div class="kpi-value ok" id="ops-state">NOMINAL</div></div>
+    <div class="kpi-card"><div class="kpi-label">ACTIVE STATION</div><div class="kpi-value" id="ops-station">BHARATI</div></div>
+    <div class="kpi-card"><div class="kpi-label">EVENTS</div><div class="kpi-value" id="ops-event-count">08</div></div>
+    <div class="kpi-card"><div class="kpi-label">SOURCE LAYERS</div><div class="kpi-value">NCPOR + SIM</div></div>
+  </div>
+
+  <div class="logistics-kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">PRIMARY CORRIDOR</div><div class="kpi-value">CAPE TOWN → BHARATI</div></div>
+    <div class="kpi-card"><div class="kpi-label">INTER-STATION LEG</div><div class="kpi-value">BHARATI → MAITRI</div></div>
+    <div class="kpi-card"><div class="kpi-label">ACTIVE CARGO</div><div class="kpi-value" id="cargo-count">04</div></div>
+    <div class="kpi-card"><div class="kpi-label">NETWORK STATUS</div><div class="kpi-value ok" id="network-status">NOMINAL</div></div>
+  </div>
+
+  <div class="logistics-layout">
+    <div class="card logistics-map-card">
+      <div class="panel-title-row">
+        <h3>LOGISTICS NETWORK</h3>
+        <span class="source-tag">SCHEMATIC · NOT NAVIGATIONAL</span>
+      </div>
+      <div class="logistics-map">
+        <svg viewBox="0 0 1000 570" role="img" aria-label="Schematic logistics network connecting Cape Town, Bharati and Maitri">
+          <defs>
+            <pattern id="lgGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M40 0H0V40" fill="none" stroke="currentColor" stroke-opacity=".08"/>
+            </pattern>
+            <filter id="lgGlow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <rect width="1000" height="570" rx="18" class="lg-bg"/>
+          <rect width="1000" height="570" rx="18" class="lg-grid"/>
+          <path d="M0 450 C170 420 240 470 400 440 S720 410 1000 455 L1000 570 L0 570 Z" class="lg-sea"/>
+          <path d="M0 360 C180 330 310 350 430 320 S720 280 1000 315" class="lg-contour"/>
+
+          <g class="route route-ship" data-route="ship">
+            <path d="M150 390 C300 405 410 405 520 355 S675 280 745 270" class="route-glow"/>
+            <path d="M150 390 C300 405 410 405 520 355 S675 280 745 270" class="route-line"/>
+          </g>
+          <g class="route route-air" data-route="air">
+            <path d="M745 270 C635 240 520 215 370 185" class="route-air-line"/>
+          </g>
+          <g class="route route-sea-bm" data-route="ship">
+            <path d="M745 270 C650 305 610 360 535 405" class="route-line route-thin"/>
+          </g>
+
+          <g class="network-node port-node">
+            <circle cx="150" cy="390" r="26" class="lg-node-halo"/>
+            <circle cx="150" cy="390" r="12" class="lg-node-core"/>
+            <text x="150" y="430" text-anchor="middle" class="lg-node-title">CAPE TOWN</text>
+            <text x="150" y="447" text-anchor="middle" class="lg-node-sub">EXPEDITION ORIGIN</text>
+          </g>
+          <g class="network-node station-b">
+            <circle cx="745" cy="270" r="27" class="lg-node-halo"/>
+            <circle cx="745" cy="270" r="13" class="lg-node-core"/>
+            <text x="780" y="263" class="lg-node-title">BHARATI</text>
+            <text x="780" y="281" class="lg-node-sub">LARSEMANN HILLS</text>
+          </g>
+          <g class="network-node station-m">
+            <circle cx="535" cy="405" r="27" class="lg-node-halo"/>
+            <circle cx="535" cy="405" r="13" class="lg-node-core"/>
+            <text x="570" y="398" class="lg-node-title">MAITRI</text>
+            <text x="570" y="416" class="lg-node-sub">SCHIRMACHER OASIS</text>
+          </g>
+          <g class="air-node">
+            <circle cx="370" cy="185" r="9" class="air-dot"/>
+            <text x="370" y="163" text-anchor="middle" class="lg-node-sub">NOVO AIRFIELD</text>
+          </g>
+
+          <g class="route-label">
+            <rect x="310" y="356" width="165" height="48" rx="10"/>
+            <text x="392" y="376" text-anchor="middle">SHIP · 10–12 DAYS*</text>
+            <text x="392" y="393" text-anchor="middle">CAPE TOWN → BHARATI</text>
+          </g>
+          <g class="route-label">
+            <rect x="585" y="318" width="155" height="48" rx="10"/>
+            <text x="662" y="338" text-anchor="middle">SHIP · 5–7 DAYS*</text>
+            <text x="662" y="355" text-anchor="middle">BHARATI → MAITRI</text>
+          </g>
+          <g class="route-label">
+            <rect x="495" y="165" width="150" height="48" rx="10"/>
+            <text x="570" y="185" text-anchor="middle">AIR · SUMMER</text>
+            <text x="570" y="202" text-anchor="middle">NOVO ↔ BHARATI*</text>
+          </g>
+
+          <g class="lg-legend">
+            <line x1="45" y1="515" x2="95" y2="515" class="legend-ship"/>
+            <text x="108" y="519">Voyage vessel</text>
+            <line x1="245" y1="515" x2="295" y2="515" class="legend-air"/>
+            <text x="308" y="519">Aircraft corridor</text>
+            <circle cx="470" cy="515" r="6" class="legend-node"/>
+            <text x="485" y="519">Station / logistics node</text>
+          </g>
+        </svg>
+      </div>
+      <div class="map-footnote">*Transit times and seasonal access shown here are NCPOR-documented planning information, not a live schedule.</div>
+    </div>
+
+    <div class="card movement-card">
+      <div class="panel-title-row"><h3>ACTIVE MOVEMENT</h3><span id="movement-pill" class="risk-pill safe">IN TRANSIT</span></div>
+      <div id="movement-detail"></div>
+      <div class="movement-controls">
+        <button data-move="voyage">VOYAGE</button>
+        <button data-move="air">AIRLIFT</button>
+        <button data-move="station">STATION TRANSFER</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mission-sequence-card">
+    <div class="panel-title-row"><h3>MISSION SEQUENCE & ROUTE GATES</h3><span class="source-tag">NCPOR BASIS + SIMULATION</span></div>
+    <div class="route-gates" id="route-gates"></div>
+    <div class="route-gate-note" id="route-gate-note">Select a mission gate to inspect its route dependency.</div>
+  </div>
+
+  <div class="logistics-bottom-grid">
+    <div class="card">
+      <div class="panel-title-row"><h3>CARGO MANIFEST</h3><span class="source-tag">ANTARIS SIMULATION</span></div>
+      <div id="cargo-manifest"></div>
+    </div>
+    <div class="card">
+      <div class="panel-title-row"><h3>RESOURCE TRANSFER</h3><span class="source-tag">SIMULATION</span></div>
+      <div id="transfer-bars"></div>
+    </div>
+  </div>
+
+  <div class="card logistics-source-card">
+    <div class="panel-title-row"><h3>NCPOR LOGISTICS BASIS</h3><span class="source-tag">SOURCE-BACKED</span></div>
+    <div class="logistics-source-grid">
+      <div><b>VOYAGE</b><span>Cape Town → Bharati → Maitri → Cape Town is described as the general voyage route. Ship timing varies with weather and sea-ice.</span></div>
+      <div><b>AIR</b><span>NCPOR documents seasonal air movement to Maitri and intra-continental Novo ↔ Bharati flights, with weather and airfield conditions affecting operations.</span></div>
+      <div><b>SUPPLIES</b><span>NCPOR expedition records document annual delivery of fuel, food, provisions, cargo and spares to the stations.</span></div>
+      <div><b>SIMULATION</b><span>Cargo quantities, movement state, burn rates and transfer percentages shown above are ANTARIS prototype values.</span></div>
+    </div>
+  </div>
+
+
+  <div class="ops-layout">
+    <div class="card timeline-card">
+      <div class="panel-title-row"><h3>MISSION TIMELINE</h3><span class="source-tag">LIVE PROTOTYPE</span></div>
+      <div class="timeline-filter">
+        <button class="active" data-filter="all">ALL</button>
+        <button data-filter="weather">WEATHER</button>
+        <button data-filter="logistics">LOGISTICS</button>
+        <button data-filter="crew">CREW</button>
+        <button data-filter="emergency">EMERGENCY</button>
+      </div>
+      <div id="ops-timeline" class="ops-timeline"></div>
+    </div>
+
+    <div class="card ops-detail-card">
+      <div class="panel-title-row"><h3>EVENT DETAIL</h3><span id="ops-detail-pill" class="risk-pill safe">SELECT</span></div>
+      <div id="ops-detail">
+        <div class="ops-empty">Select an event from the timeline.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ops-bottom-grid">
+    <div class="card">
+      <div class="panel-title-row"><h3>LIVE WEATHER SNAPSHOT</h3><span class="source-tag">NCPOR</span></div>
+      <div id="ops-weather"></div>
+    </div>
+    <div class="card">
+      <div class="panel-title-row"><h3>MISSION READINESS</h3><span id="readiness-pill" class="risk-pill safe">READY</span></div>
+      <div id="ops-readiness"></div>
+    </div>
+  </div>
+
+  <div class="card ops-source-card">
+    <div class="panel-title-row"><h3>DATA PROVENANCE</h3><span class="source-tag">EXPLICIT</span></div>
+    <div class="ops-source-grid">
+      <div><b>NCPOR</b><span>Station identity, infrastructure, expedition logistics and meteorological observations.</span></div>
+      <div><b>ANTARIS SIMULATION</b><span>Operational load, fuel/water percentages, event severity and readiness state.</span></div>
+      <div><b>EVENT MODEL</b><span>Timeline events combine source-backed context with prototype operational visualization.</span></div>
+    </div>
+  </div>
+
+</div><div id="v-logistics" class="view"><div class="hero"><div><div class="eyebrow">LOGISTICS</div><div class="title">Station Inventory</div></div></div><div class="card table-wrap"><table class="table"><thead><tr><th>ITEM</th><th>STOCK</th><th>DAILY USE</th><th>RESERVE</th><th>PRIORITY</th><th>STATUS</th></tr></thead><tbody id="logistics-body"></tbody></table></div></div>
+      <div id="v-crew" class="view">
+  <div class="hero"><div><div class="eyebrow">CREW & MISSION MANAGEMENT</div><div class="title">Personnel Readiness & Task Control</div><div class="hero-sub">Roster, station assignment, induction/rotation state and mission-task tracking.</div></div></div>
+  <div class="crew-grid" id="crew-cards"></div>
+  <div class="crew-management-grid">
+    <div class="card crew-roster-card">
+      <div class="panel-title-row"><h3>MISSION ROSTER</h3><span class="source-tag">ANTARIS SIMULATION</span></div>
+      <div class="crew-filters" id="crew-filters">
+        <button class="active" data-crew-filter="all">ALL</button><button data-crew-filter="maitri">MAITRI</button><button data-crew-filter="bharati">BHARATI</button><button data-crew-filter="voyage">VOYAGE</button>
+      </div>
+      <div id="crew-roster"></div>
+    </div>
+    <div class="card crew-status-card">
+      <div class="panel-title-row"><h3>INDUCTION & ROTATION</h3><span id="crew-cycle-pill" class="risk-pill safe">ON PLAN</span></div>
+      <div id="crew-cycle"></div>
+      <div class="panel-title-row crew-task-head"><h3>MISSION TASKS</h3><span class="source-tag">SIMULATION</span></div>
+      <div id="crew-tasks"></div>
+    </div>
+  </div>
+  <div class="card crew-note-card"><div class="panel-title-row"><h3>CREW DATA PROVENANCE</h3><span class="source-tag">EXPLICIT</span></div><p>NCPOR publicly documents station capacity, expedition staffing, induction/de-induction and logistics roles. Individual names, personal medical records and live duty rosters are not represented here; the roster below is prototype data for ANTARIS workflow testing.</p></div>
+</div>
+      <div id="v-emergency" class="view">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">EMERGENCY CONTROL</div>
+      <div class="title">Station Emergency Readiness</div>
+      <div class="sub">NCPOR weather context + ANTARIS operational failover simulation</div>
+    </div>
+    <div id="emergency-banner" class="emergency-banner normal">
+      <span class="emergency-beacon"></span><b id="emergency-banner-text">SYSTEM NOMINAL</b>
+    </div>
+  </div>
+
+  <div class="emergency-grid">
+    <div class="card emergency-hero-card">
+      <div class="panel-title-row">
+        <h3>EMERGENCY LEVEL</h3>
+        <span id="emergency-level" class="emergency-level safe">NOMINAL</span>
+      </div>
+      <div id="emergency-gauge"></div>
+      <div id="emergency-context"></div>
+    </div>
+
+    <div class="card weather-risk-card">
+      <div class="panel-title-row">
+        <h3>NCPOR WEATHER RISK</h3>
+        <span id="weather-risk-pill" class="risk-pill safe">LOW</span>
+      </div>
+      <div id="emergency-weather"></div>
+      <div class="weather-bars" id="weather-bars"></div>
+    </div>
+  </div>
+
+  <div class="emergency-grid">
+    <div class="card generator-card">
+      <div class="panel-title-row">
+        <h3>GENERATOR FALLBACK</h3>
+        <span id="generator-stress" class="stress-pill">LOW STRESS</span>
+      </div>
+      <div id="generator-gauge"></div>
+      <div id="gen-fallback"></div>
+    </div>
+
+    <div class="card">
+      <div class="panel-title-row">
+        <h3>STATION SURVIVAL LOAD</h3>
+        <span id="survival-status" class="risk-pill safe">STABLE</span>
+      </div>
+      <div id="survival-load"></div>
+    </div>
+  </div>
+
+  <div class="emergency-grid">
+    <div class="card">
+      <h3>PRIORITY ORDER</h3>
+      <div id="priority-list"></div>
+    </div>
+    <div class="card">
+      <h3>CRITICAL ALERTS</h3>
+      <div id="critical-alerts"></div>
+    </div>
+  </div>
+
+  <div class="card emergency-source">
+    <div class="panel-title-row">
+      <h3>EMERGENCY DATA SOURCES</h3>
+      <span class="source-tag">NCPOR + ANTARIS</span>
+    </div>
+    <div id="emergency-source-detail"></div>
+  </div>
+</div>
+<div id="v-audit" class="view"><div class="hero"><div><div class="eyebrow">AUDIT / EVENT LOG</div><div class="title">Operational History</div></div></div><div class="card"><div id="alarm-filters" class="scenario-row"></div><div id="alarm-full-list"></div><div class="table-wrap"><table class="table"><thead><tr><th>TIME</th><th>STATION</th><th>EVENT</th><th>SEVERITY</th></tr></thead><tbody id="audit-body"></tbody></table></div></div></div>
+    </section>
+  </main>
+</div>
+<script src="GOLU_SONI_logic.js"></script>
+</body>
+</html>

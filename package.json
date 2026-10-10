@@ -1,0 +1,14 @@
+{
+  "name": "antaris-backend",
+  "version": "2.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  },
+  "description": "ANTARIS local backend using Node.js built-in SQLite (node:sqlite). No native npm database package required."
+}
